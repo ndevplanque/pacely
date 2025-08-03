@@ -1,0 +1,42 @@
+services:
+    # L'application
+    app:
+        build: .
+        volumes:
+            - ./:/var/www/html
+            # - ./vendor:/var/www/html/vendor
+            # - ./node_modules:/var/www/html/node_modules
+        ports:
+            - "9000:9000"
+        environment:
+            - APP_ENV=local
+            - APP_DEBUG=true
+        networks:
+            - app-network
+
+    # Un serveur statique pour servir le front
+    webserver:
+        image: nginx:alpine
+        ports:
+            - "8080:80"
+        volumes:
+            - ./:/var/www/html
+            - ./nginx/:/etc/nginx/conf.d/
+        depends_on:
+            - app
+        networks:
+            - app-network
+
+    # Un service dédié à compiler le front
+    node:
+        image: node:20
+        working_dir: /var/www/html
+        volumes:
+            - ./:/var/www/html
+        command: sh -c "npm install && npm run build"
+        networks:
+            - app-network
+
+networks:
+    app-network:
+        driver: bridge
